@@ -63,4 +63,53 @@ public class DatabaseSpecificSQLGeneratorTest {
         String countQuery = databaseSpecificSQLGenerator.countQueryResult(sql);
         Assertions.assertEquals("SELECT COUNT(*) FROM (SELECT 1 FROM test_table WHERE asd=2) AS temp", countQuery);
     }
+
+    @Test
+    public void testCountQueryResultOnSqlWithLowercaseLimit() {
+        String sql = "SELECT 1 FROM test_table WHERE asd=2 limit 10";
+        String countQuery = databaseSpecificSQLGenerator.countQueryResult(sql);
+        Assertions.assertEquals("SELECT COUNT(*) FROM (SELECT 1 FROM test_table WHERE asd=2) AS temp", countQuery);
+    }
+
+    @Test
+    public void testCountQueryResultOnSqlWithLowercaseOffset() {
+        String sql = "SELECT 1 FROM test_table WHERE asd=2 offset 5";
+        String countQuery = databaseSpecificSQLGenerator.countQueryResult(sql);
+        Assertions.assertEquals("SELECT COUNT(*) FROM (SELECT 1 FROM test_table WHERE asd=2) AS temp", countQuery);
+    }
+
+    @Test
+    public void testCountQueryResultOnSqlWithMixedCaseLimitAndOffset() {
+        String sql = "SELECT 1 FROM test_table WHERE asd=2 LiMiT 10 OfFsEt 5";
+        String countQuery = databaseSpecificSQLGenerator.countQueryResult(sql);
+        Assertions.assertEquals("SELECT COUNT(*) FROM (SELECT 1 FROM test_table WHERE asd=2) AS temp", countQuery);
+    }
+
+    @Test
+    public void testCountQueryResultOnSqlWithExtraWhitespace() {
+        String sql = "SELECT 1 FROM test_table WHERE asd=2  LIMIT  10  OFFSET  5";
+        String countQuery = databaseSpecificSQLGenerator.countQueryResult(sql);
+        Assertions.assertEquals("SELECT COUNT(*) FROM (SELECT 1 FROM test_table WHERE asd=2) AS temp", countQuery);
+    }
+
+    @Test
+    public void testCountQueryResultOnSqlWithNewlineBeforeLimit() {
+        String sql = "SELECT 1 FROM test_table WHERE asd=2\nLIMIT 10";
+        String countQuery = databaseSpecificSQLGenerator.countQueryResult(sql);
+        Assertions.assertEquals("SELECT COUNT(*) FROM (SELECT 1 FROM test_table WHERE asd=2) AS temp", countQuery);
+    }
+
+    @Test
+    public void testCountQueryResultOnSqlWithTabsAndNewlines() {
+        String sql = "SELECT 1 FROM test_table WHERE asd=2\n\tLIMIT\t10\n\tOFFSET\t5";
+        String countQuery = databaseSpecificSQLGenerator.countQueryResult(sql);
+        Assertions.assertEquals("SELECT COUNT(*) FROM (SELECT 1 FROM test_table WHERE asd=2) AS temp", countQuery);
+    }
+
+    @Test
+    public void testCountQueryResultOnSqlWithMultipleSpaces() {
+        String sql = "SELECT 1 FROM test_table WHERE asd=2     LIMIT     100     OFFSET     50";
+        String countQuery = databaseSpecificSQLGenerator.countQueryResult(sql);
+        Assertions.assertEquals("SELECT COUNT(*) FROM (SELECT 1 FROM test_table WHERE asd=2) AS temp", countQuery);
+    }
 }
