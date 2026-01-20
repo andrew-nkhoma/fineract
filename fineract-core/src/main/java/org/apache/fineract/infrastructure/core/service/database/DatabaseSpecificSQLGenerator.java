@@ -106,8 +106,8 @@ public class DatabaseSpecificSQLGenerator {
 
     public String countQueryResult(@NonNull String sql) {
         // Needs to remove the limit and offset
-        // Use case-insensitive matching and flexible whitespace handling
-        sql = sql.replaceAll("(?i)\\s+LIMIT\\s+\\d+", "").replaceAll("(?i)\\s+OFFSET\\s+\\d+", "").trim();
+        // Use case-insensitive matching, word boundaries, and flexible whitespace handling
+        sql = sql.replaceAll("(?i)\\bLIMIT\\s+\\d+", "").replaceAll("(?i)\\bOFFSET\\s+\\d+", "").trim();
         return format("SELECT COUNT(*) FROM (%s) AS temp", sql);
     }
 

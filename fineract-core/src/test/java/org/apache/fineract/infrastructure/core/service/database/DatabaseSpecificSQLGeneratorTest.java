@@ -112,4 +112,12 @@ public class DatabaseSpecificSQLGeneratorTest {
         String countQuery = databaseSpecificSQLGenerator.countQueryResult(sql);
         Assertions.assertEquals("SELECT COUNT(*) FROM (SELECT 1 FROM test_table WHERE asd=2) AS temp", countQuery);
     }
+
+    @Test
+    public void testCountQueryResultOnSqlWithNoSpaceBeforeLimit() {
+        // Edge case: LIMIT immediately after a word (though invalid SQL, we should handle it)
+        String sql = "SELECT 1 FROM test_table LIMIT 10";
+        String countQuery = databaseSpecificSQLGenerator.countQueryResult(sql);
+        Assertions.assertEquals("SELECT COUNT(*) FROM (SELECT 1 FROM test_table) AS temp", countQuery);
+    }
 }
