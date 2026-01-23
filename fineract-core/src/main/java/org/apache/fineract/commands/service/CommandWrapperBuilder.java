@@ -1179,6 +1179,19 @@ public class CommandWrapperBuilder {
         return this;
     }
 
+    /**
+     * Creates a command wrapper for disbursing a loan with capitalized income. This performs both operations
+     * atomically.
+     */
+    public CommandWrapperBuilder disburseWithCapitalizationLoanApplication(final Long loanId) {
+        this.actionName = "DISBURSEWITHCAPITALIZATION";
+        this.entityName = "LOAN";
+        this.entityId = loanId;
+        this.loanId = loanId;
+        this.href = "/loans/" + loanId + "?command=disburseWithCapitalization";
+        return this;
+    }
+
     public CommandWrapperBuilder disburseWithoutAutoDownPayment(final Long loanId) {
         this.actionName = "DISBURSEWITHOUTAUTODOWNPAYMENT";
         this.entityName = "LOAN";

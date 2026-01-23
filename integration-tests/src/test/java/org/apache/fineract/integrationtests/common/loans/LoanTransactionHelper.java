@@ -2990,6 +2990,35 @@ public class LoanTransactionHelper {
                 .transactionAmount(BigDecimal.valueOf(amount)).locale("en"));
     }
 
+    /**
+     * Disburses a loan with capitalized income in a single atomic transaction.
+     *
+     * @param loanId
+     *            loan Id
+     * @param transactionAmount
+     *            net amount to disburse to client
+     * @param capitalizedIncomeAmount
+     *            amount of fees to capitalize (add to principal)
+     * @param disbursementDate
+     *            formatted to "d MMMM yyyy"
+     * @return Post Loans Loan Id Response
+     */
+    public PostLoansLoanIdResponse disburseWithCapitalization(final Long loanId, final BigDecimal transactionAmount,
+            final BigDecimal capitalizedIncomeAmount, final String disbursementDate) {
+        PostLoansLoanIdRequest request = new PostLoansLoanIdRequest().actualDisbursementDate(disbursementDate)
+                .transactionAmount(transactionAmount).dateFormat(DATE_FORMAT).locale("en");
+
+        // Add the capitalizedIncomeAmount as an additional property
+        // Note: The Fineract client may need to be regenerated to include this property
+        // For now, we'll make a direct API call
+        final String requestBody = new Gson().toJson(Map.of("actualDisbursementDate", disbursementDate, "transactionAmount",
+                transactionAmount, "capitalizedIncomeAmount", capitalizedIncomeAmount, "dateFormat", DATE_FORMAT, "locale", "en"));
+
+        return Utils.performServerPost(this.requestSpec, this.responseSpec,
+                "/fineract-provider/api/v1/loans/" + loanId + "?command=disburseWithCapitalization&" + Utils.TENANT_IDENTIFIER,
+                requestBody, PostLoansLoanIdResponse.class);
+    }
+
     public PostLoansLoanIdResponse disburseToSavingsLoan(String loanExternalId, PostLoansLoanIdRequest request) {
         return Calls.ok(FineractClientHelper.getFineractClient().loans.stateTransitions1(loanExternalId, request, "disburseToSavings"));
     }
