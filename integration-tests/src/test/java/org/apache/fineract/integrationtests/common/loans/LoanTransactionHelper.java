@@ -140,6 +140,8 @@ public class LoanTransactionHelper {
     private static final String RECOVER_FROM_GUARANTORS_COMMAND = "recoverGuarantees";
     private static final String MAKE_REFUND_BY_CASH_COMMAND = "refundByCash";
     private static final String FORECLOSURE_COMMAND = "foreclosure";
+    private static final String DISBURSE_WITH_CAPITALIZATION_COMMAND = "disburseWithCapitalization";
+    private static final String CAPITALIZED_INCOME_AMOUNT_PARAM = "capitalizedIncomeAmount";
     private static final Gson GSON = new JSON().getGson();
     private final RequestSpecification requestSpec;
     private final ResponseSpecification responseSpec;
@@ -3005,17 +3007,12 @@ public class LoanTransactionHelper {
      */
     public PostLoansLoanIdResponse disburseWithCapitalization(final Long loanId, final BigDecimal transactionAmount,
             final BigDecimal capitalizedIncomeAmount, final String disbursementDate) {
-        PostLoansLoanIdRequest request = new PostLoansLoanIdRequest().actualDisbursementDate(disbursementDate)
-                .transactionAmount(transactionAmount).dateFormat(DATE_FORMAT).locale("en");
-
-        // Add the capitalizedIncomeAmount as an additional property
-        // Note: The Fineract client may need to be regenerated to include this property
-        // For now, we'll make a direct API call
+        // Build request body with proper field names as constants
         final String requestBody = new Gson().toJson(Map.of("actualDisbursementDate", disbursementDate, "transactionAmount",
-                transactionAmount, "capitalizedIncomeAmount", capitalizedIncomeAmount, "dateFormat", DATE_FORMAT, "locale", "en"));
+                transactionAmount, CAPITALIZED_INCOME_AMOUNT_PARAM, capitalizedIncomeAmount, "dateFormat", DATE_FORMAT, "locale", "en"));
 
         return Utils.performServerPost(this.requestSpec, this.responseSpec,
-                "/fineract-provider/api/v1/loans/" + loanId + "?command=disburseWithCapitalization&" + Utils.TENANT_IDENTIFIER,
+                LOAN_ACCOUNT_URL + "/" + loanId + "?command=" + DISBURSE_WITH_CAPITALIZATION_COMMAND + "&" + Utils.TENANT_IDENTIFIER,
                 requestBody, PostLoansLoanIdResponse.class);
     }
 

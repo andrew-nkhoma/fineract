@@ -26,6 +26,7 @@ import org.apache.fineract.commands.handler.NewCommandSourceHandler;
 import org.apache.fineract.infrastructure.DataIntegrityErrorHandler;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
+import org.apache.fineract.portfolio.loanaccount.api.LoanApiConstants;
 import org.apache.fineract.portfolio.loanaccount.service.CapitalizedIncomePlatformService;
 import org.apache.fineract.portfolio.loanaccount.service.LoanWritePlatformService;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -53,8 +54,6 @@ public class DisburseWithCapitalizationCommandHandler implements NewCommandSourc
     private final CapitalizedIncomePlatformService capitalizedIncomeService;
     private final DataIntegrityErrorHandler dataIntegrityErrorHandler;
 
-    public static final String CAPITALIZED_INCOME_AMOUNT_PARAM = "capitalizedIncomeAmount";
-
     @Transactional
     @Override
     public CommandProcessingResult processCommand(final JsonCommand command) {
@@ -70,7 +69,7 @@ public class DisburseWithCapitalizationCommandHandler implements NewCommandSourc
             log.info("Loan {} disbursed successfully, resourceId: {}", loanId, disbursementResult.getResourceId());
 
             // Step 2: Add capitalized income if amount is specified
-            BigDecimal capitalizedAmount = command.bigDecimalValueOfParameterNamed(CAPITALIZED_INCOME_AMOUNT_PARAM);
+            BigDecimal capitalizedAmount = command.bigDecimalValueOfParameterNamed(LoanApiConstants.CAPITALIZED_INCOME_AMOUNT_PARAM);
 
             if (capitalizedAmount != null && capitalizedAmount.compareTo(BigDecimal.ZERO) > 0) {
                 log.debug("Step 2: Adding capitalized income of {} for loan {}", capitalizedAmount, loanId);
