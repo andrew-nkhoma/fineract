@@ -73,6 +73,18 @@ public class DisburseWithCapitalizationCommandHandler implements NewCommandSourc
     private final LoanTransactionValidator loanTransactionValidator;
     private final FromJsonHelper fromApiJsonHelper;
 
+    /**
+     * Supported parameters for disburse with capitalization command. This includes all standard disbursement parameters
+     * plus capitalizedIncomeAmount.
+     */
+    private static final Set<String> DISBURSE_WITH_CAPITALIZATION_PARAMETERS = new HashSet<>(
+            Arrays.asList("actualDisbursementDate", "externalId", "note", "locale", "dateFormat", "paymentTypeId", "accountNumber",
+                    "checkNumber", "routingCode", "receiptNumber", "bankNumber", "adjustRepaymentDate",
+                    LoanApiConstants.principalDisbursedParameterName, LoanApiConstants.fixedEmiAmountParameterName,
+                    LoanApiConstants.postDatedChecks, LoanApiConstants.disbursementNetDisbursalAmountParameterName,
+                    LoanApiConstants.CAPITALIZED_INCOME_AMOUNT_PARAM, "transactionAmount" // transactionAmount as alias
+            ));
+
     @Transactional
     @Override
     public CommandProcessingResult processCommand(final JsonCommand command) {
@@ -132,17 +144,9 @@ public class DisburseWithCapitalizationCommandHandler implements NewCommandSourc
             throw new InvalidJsonException();
         }
 
-        // Use the updated getDisbursementParameters which includes capitalizedIncomeAmount
-        final Set<String> disbursementWithCapitalizationParameters = new HashSet<>(Arrays.asList("actualDisbursementDate", "externalId",
-                "note", "locale", "dateFormat", "paymentTypeId", "accountNumber", "checkNumber", "routingCode", "receiptNumber",
-                "bankNumber", "adjustRepaymentDate", LoanApiConstants.principalDisbursedParameterName,
-                LoanApiConstants.fixedEmiAmountParameterName, LoanApiConstants.postDatedChecks,
-                LoanApiConstants.disbursementNetDisbursalAmountParameterName, LoanApiConstants.CAPITALIZED_INCOME_AMOUNT_PARAM,
-                "transactionAmount" // Also support transactionAmount as alias
-        ));
-
+        // Check for unsupported parameters
         final Type typeOfMap = new TypeToken<Map<String, Object>>() {}.getType();
-        this.fromApiJsonHelper.checkForUnsupportedParameters(typeOfMap, json, disbursementWithCapitalizationParameters);
+        this.fromApiJsonHelper.checkForUnsupportedParameters(typeOfMap, json, DISBURSE_WITH_CAPITALIZATION_PARAMETERS);
 
         // Now call the standard disbursement validation
         // (which will validate actualDisbursementDate, amounts, etc.)
@@ -150,8 +154,9 @@ public class DisburseWithCapitalizationCommandHandler implements NewCommandSourc
 
         // Additional validation for capitalizedIncomeAmount if present
         final JsonElement element = this.fromApiJsonHelper.parse(json);
+        final Locale locale = this.fromApiJsonHelper.extractLocaleParameter(element.getAsJsonObject());
         final BigDecimal capitalizedAmount = this.fromApiJsonHelper.extractBigDecimalNamed(
-                LoanApiConstants.CAPITALIZED_INCOME_AMOUNT_PARAM, element, Locale.ENGLISH);
+                LoanApiConstants.CAPITALIZED_INCOME_AMOUNT_PARAM, element, locale);
 
         if (capitalizedAmount != null) {
             final List<ApiParameterError> dataValidationErrors = new ArrayList<>();
