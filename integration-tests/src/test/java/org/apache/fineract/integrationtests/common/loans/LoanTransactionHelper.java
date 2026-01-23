@@ -140,6 +140,8 @@ public class LoanTransactionHelper {
     private static final String RECOVER_FROM_GUARANTORS_COMMAND = "recoverGuarantees";
     private static final String MAKE_REFUND_BY_CASH_COMMAND = "refundByCash";
     private static final String FORECLOSURE_COMMAND = "foreclosure";
+    private static final String DISBURSE_WITH_CAPITALIZATION_COMMAND = "disburseWithCapitalization";
+    private static final String CAPITALIZED_INCOME_AMOUNT_PARAM = "capitalizedIncomeAmount";
     private static final Gson GSON = new JSON().getGson();
     private final RequestSpecification requestSpec;
     private final ResponseSpecification responseSpec;
@@ -2988,6 +2990,30 @@ public class LoanTransactionHelper {
     public PostLoansLoanIdResponse disburseLoan(Long loanId, String date, Double amount) {
         return disburseLoan(loanId, new PostLoansLoanIdRequest().actualDisbursementDate(date).dateFormat(DATE_FORMAT)
                 .transactionAmount(BigDecimal.valueOf(amount)).locale("en"));
+    }
+
+    /**
+     * Disburses a loan with capitalized income in a single atomic transaction.
+     *
+     * @param loanId
+     *            loan Id
+     * @param transactionAmount
+     *            net amount to disburse to client
+     * @param capitalizedIncomeAmount
+     *            amount of fees to capitalize (add to principal)
+     * @param disbursementDate
+     *            formatted to "d MMMM yyyy"
+     * @return Post Loans Loan Id Response
+     */
+    public PostLoansLoanIdResponse disburseWithCapitalization(final Long loanId, final BigDecimal transactionAmount,
+            final BigDecimal capitalizedIncomeAmount, final String disbursementDate) {
+        // Build request body with proper field names as constants
+        final String requestBody = new Gson().toJson(Map.of("actualDisbursementDate", disbursementDate, "transactionAmount",
+                transactionAmount, CAPITALIZED_INCOME_AMOUNT_PARAM, capitalizedIncomeAmount, "dateFormat", DATE_FORMAT, "locale", "en"));
+
+        return Utils.performServerPost(this.requestSpec, this.responseSpec,
+                LOAN_ACCOUNT_URL + "/" + loanId + "?command=" + DISBURSE_WITH_CAPITALIZATION_COMMAND + "&" + Utils.TENANT_IDENTIFIER,
+                requestBody, PostLoansLoanIdResponse.class);
     }
 
     public PostLoansLoanIdResponse disburseToSavingsLoan(String loanExternalId, PostLoansLoanIdRequest request) {
