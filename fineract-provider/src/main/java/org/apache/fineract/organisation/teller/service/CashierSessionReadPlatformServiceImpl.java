@@ -115,8 +115,10 @@ public class CashierSessionReadPlatformServiceImpl implements CashierSessionRead
 
         final String summarySql =
             "SELECT " +
+            // txn_type 101 = ALLOCATE, 102 = SETTLE (CashierTxnType)
             "  COALESCE(SUM(CASE WHEN ct.txn_type = 101 THEN ct.txn_amount END), 0) AS opening_allocation, " +
             "  COALESCE(SUM(CASE WHEN ct.txn_type = 102 THEN ct.txn_amount END), 0) AS total_settled, " +
+            // transaction_type_enum 1 = REPAYMENT (cash out), 2 = DISBURSEMENT (cash in)
             "  COALESCE(SUM(CASE WHEN lt.transaction_type_enum = 2  THEN lt.amount END), 0) AS total_cash_in, " +
             "  COALESCE(SUM(CASE WHEN lt.transaction_type_enum = 1  THEN lt.amount END), 0) AS total_cash_out " +
             "FROM m_cashier_sessions cs " +
