@@ -48,4 +48,8 @@ public interface CashierSessionRepository extends JpaRepository<CashierSession, 
 
     // List all sessions for a cashier on a teller
     List<CashierSession> findByCashierIdAndTellerIdOrderBySessionDateDesc(Long cashierId, Long tellerId);
+
+    // Find the single OPEN session for a cashier (regardless of teller/date — for allocate/settle)
+    @Query("SELECT cs FROM CashierSession cs WHERE cs.cashier.id = :cashierId AND cs.status = org.apache.fineract.organisation.teller.domain.CashierSessionStatus.OPEN")
+    Optional<CashierSession> findOpenSessionByCashierId(@Param("cashierId") Long cashierId);
 }

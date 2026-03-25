@@ -19,7 +19,6 @@
 package org.apache.fineract.organisation.teller.data;
 
 import java.io.Serializable;
-import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
@@ -42,8 +41,6 @@ public class CashierSessionData implements Serializable {
     private LocalDate sessionDate;
     private LocalDateTime openedAt;
     private LocalDateTime closedAt;
-    private BigDecimal openingAllocation;
-    private BigDecimal totalSettled;
     private CashierSessionStatus status;
     private Long openingTxnId;
     private Long closingTxnId;

@@ -70,10 +70,12 @@ public class OrganisationTellerConfiguration {
             CashierTransactionRepository cashierTxnRepository, JournalEntryRepository glJournalEntryRepository,
             FinancialActivityAccountRepositoryWrapper financialActivityAccountRepositoryWrapper,
             CashierTransactionDataValidator cashierTransactionDataValidator,
-            GLAccountRepositoryWrapper glAccountRepositoryWrapper) {
+            GLAccountRepositoryWrapper glAccountRepositoryWrapper,
+            CashierSessionRepository cashierSessionRepository) {
         return new TellerWritePlatformServiceJpaImpl(context, fromApiJsonDeserializer, tellerRepositoryWrapper, officeRepositoryWrapper,
                 staffRepository, cashierRepository, cashierTxnRepository, glJournalEntryRepository,
-                financialActivityAccountRepositoryWrapper, cashierTransactionDataValidator, glAccountRepositoryWrapper);
+                financialActivityAccountRepositoryWrapper, cashierTransactionDataValidator, glAccountRepositoryWrapper,
+                cashierSessionRepository);
     }
 
     @Bean

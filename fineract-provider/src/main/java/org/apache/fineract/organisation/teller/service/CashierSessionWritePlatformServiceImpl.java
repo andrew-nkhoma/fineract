@@ -136,11 +136,13 @@ public class CashierSessionWritePlatformServiceImpl implements CashierSessionWri
         final BigDecimal sumCashOut = cashierTransactionRepository.sumAmountByCashierAndTxnTypeAndDate(cashierId,
                 CashierTxnType.OUTWARD_CASH_TXN.getId(), sessionDate);
 
-        final BigDecimal openingAllocation = session.getOpeningAllocation() != null ? session.getOpeningAllocation() : BigDecimal.ZERO;
+        final BigDecimal openingAllocation = cashierTransactionRepository
+                .sumAmountByCashierSessionAndTxnType(sessionId, CashierTxnType.ALLOCATE.getId());
+        final BigDecimal safeOpeningAllocation = openingAllocation != null ? openingAllocation : BigDecimal.ZERO;
         final BigDecimal safeCashIn = sumCashIn != null ? sumCashIn : BigDecimal.ZERO;
         final BigDecimal safeCashOut = sumCashOut != null ? sumCashOut : BigDecimal.ZERO;
 
-        final BigDecimal expectedCash = openingAllocation.add(safeCashIn).subtract(safeCashOut);
+        final BigDecimal expectedCash = safeOpeningAllocation.add(safeCashIn).subtract(safeCashOut);
         final BigDecimal variance = resolvedSettledAmount.subtract(expectedCash);
         final boolean hasVariance = variance.compareTo(BigDecimal.ZERO) != 0;
 
@@ -158,7 +160,6 @@ public class CashierSessionWritePlatformServiceImpl implements CashierSessionWri
         }
 
         // Update session fields
-        session.setTotalSettled(resolvedSettledAmount);
         if (hasVariance) {
             session.setSupervisorNote(supervisorNote);
         }

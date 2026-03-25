@@ -83,6 +83,9 @@ public class CashierTransaction extends AbstractPersistableCustom<Long> {
     @Column(name = "currency_code", nullable = true)
     private String currencyCode;
 
+    @Column(name = "cashier_session_id")
+    private Long cashierSessionId;
+
     public static CashierTransaction fromJson(final Cashier cashier, final JsonCommand command) {
         final Integer txnType = command.integerValueOfParameterNamed("txnType");
         final BigDecimal txnAmount = command.bigDecimalValueOfParameterNamed("txnAmount");

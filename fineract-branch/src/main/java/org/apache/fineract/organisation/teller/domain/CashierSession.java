@@ -26,7 +26,6 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
-import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
@@ -69,12 +68,6 @@ public class CashierSession extends AbstractPersistableCustom<Long> {
 
     @Column(name = "closed_at")
     private LocalDateTime closedAt;
-
-    @Column(name = "opening_allocation", precision = 19, scale = 6, nullable = false)
-    private BigDecimal openingAllocation = BigDecimal.ZERO;
-
-    @Column(name = "total_settled", precision = 19, scale = 6, nullable = false)
-    private BigDecimal totalSettled = BigDecimal.ZERO;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", length = 20, nullable = false)

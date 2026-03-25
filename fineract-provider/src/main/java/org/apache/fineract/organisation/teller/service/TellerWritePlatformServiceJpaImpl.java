@@ -36,6 +36,7 @@ import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResultBuilder;
 import org.apache.fineract.infrastructure.core.exception.ErrorHandler;
+import org.apache.fineract.infrastructure.core.exception.GeneralPlatformDomainRuleException;
 import org.apache.fineract.infrastructure.core.exception.PlatformDataIntegrityException;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.infrastructure.security.exception.NoAuthorizationException;
@@ -48,6 +49,8 @@ import org.apache.fineract.organisation.staff.exception.StaffNotFoundException;
 import org.apache.fineract.organisation.teller.data.CashierTransactionDataValidator;
 import org.apache.fineract.organisation.teller.domain.Cashier;
 import org.apache.fineract.organisation.teller.domain.CashierRepository;
+import org.apache.fineract.organisation.teller.domain.CashierSession;
+import org.apache.fineract.organisation.teller.domain.CashierSessionRepository;
 import org.apache.fineract.organisation.teller.domain.CashierTransaction;
 import org.apache.fineract.organisation.teller.domain.CashierTransactionRepository;
 import org.apache.fineract.organisation.teller.domain.CashierTxnType;
@@ -77,6 +80,7 @@ public class TellerWritePlatformServiceJpaImpl implements TellerWritePlatformSer
     private final FinancialActivityAccountRepositoryWrapper financialActivityAccountRepositoryWrapper;
     private final CashierTransactionDataValidator cashierTransactionDataValidator;
     private final GLAccountRepositoryWrapper glAccountRepositoryWrapper;
+    private final CashierSessionRepository cashierSessionRepository;
 
     @Override
     @Transactional
@@ -401,6 +405,15 @@ public class TellerWritePlatformServiceJpaImpl implements TellerWritePlatformSer
 
             final CashierTransaction cashierTxn = CashierTransaction.fromJson(cashier, command);
             cashierTxn.setTxnType(txnType.getId());
+
+            if (txnType.equals(CashierTxnType.ALLOCATE) || txnType.equals(CashierTxnType.SETTLE)) {
+                final CashierSession activeSession = cashierSessionRepository
+                        .findOpenSessionByCashierId(cashierId)
+                        .orElseThrow(() -> new GeneralPlatformDomainRuleException(
+                                "error.msg.teller.cashier.no.open.session",
+                                "No open cashier session found for cashier: " + cashierId));
+                cashierTxn.setCashierSessionId(activeSession.getId());
+            }
 
             this.cashierTxnRepository.save(cashierTxn);
 

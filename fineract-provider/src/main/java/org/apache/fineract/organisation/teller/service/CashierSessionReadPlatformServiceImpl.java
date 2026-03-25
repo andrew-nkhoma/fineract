@@ -47,7 +47,6 @@ public class CashierSessionReadPlatformServiceImpl implements CashierSessionRead
             return "cs.id as id, cs.cashier_id as cashier_id, cs.teller_id as teller_id, "
                     + "cs.user_id as user_id, cs.office_id as office_id, cs.session_date as session_date, "
                     + "cs.opened_at as opened_at, cs.closed_at as closed_at, "
-                    + "cs.opening_allocation as opening_allocation, cs.total_settled as total_settled, "
                     + "cs.status as status, cs.opening_txn_id as opening_txn_id, "
                     + "cs.closing_txn_id as closing_txn_id, cs.currency_code as currency_code "
                     + "from m_cashier_sessions cs ";
@@ -68,16 +67,14 @@ public class CashierSessionReadPlatformServiceImpl implements CashierSessionRead
             final Timestamp closedAtTs = rs.getTimestamp("closed_at");
             final LocalDateTime closedAt = closedAtTs != null ? closedAtTs.toLocalDateTime() : null;
 
-            final BigDecimal openingAllocation = rs.getBigDecimal("opening_allocation");
-            final BigDecimal totalSettled = rs.getBigDecimal("total_settled");
             final String statusStr = rs.getString("status");
             final CashierSessionStatus status = statusStr != null ? CashierSessionStatus.valueOf(statusStr) : null;
             final Long openingTxnId = rs.getLong("opening_txn_id");
             final Long closingTxnId = rs.getLong("closing_txn_id");
             final String currencyCode = rs.getString("currency_code");
 
-            return new CashierSessionData(id, cashierId, tellerId, userId, officeId, sessionDate, openedAt, closedAt, openingAllocation,
-                    totalSettled, status, openingTxnId == 0 ? null : openingTxnId, closingTxnId == 0 ? null : closingTxnId, currencyCode);
+            return new CashierSessionData(id, cashierId, tellerId, userId, officeId, sessionDate, openedAt, closedAt,
+                    status, openingTxnId == 0 ? null : openingTxnId, closingTxnId == 0 ? null : closingTxnId, currencyCode);
         }
     }
 
@@ -116,27 +113,29 @@ public class CashierSessionReadPlatformServiceImpl implements CashierSessionRead
     public CashierSessionSummaryData getSessionSummary(final Long sessionId) {
         final CashierSessionData session = findSessionById(sessionId);
 
-        final String cashInSql = "select coalesce(sum(ct.txn_amount), 0) from m_cashier_transactions ct "
-                + "where ct.cashier_id = ? and ct.txn_date >= ? and ct.txn_type in (1, 101, 102)";
+        final String summarySql =
+            "SELECT " +
+            "  COALESCE(SUM(CASE WHEN ct.txn_type = 101 THEN ct.txn_amount END), 0) AS opening_allocation, " +
+            "  COALESCE(SUM(CASE WHEN ct.txn_type = 102 THEN ct.txn_amount END), 0) AS total_settled, " +
+            "  COALESCE(SUM(CASE WHEN lt.transaction_type_enum = 2  THEN lt.amount END), 0) AS total_cash_in, " +
+            "  COALESCE(SUM(CASE WHEN lt.transaction_type_enum = 1  THEN lt.amount END), 0) AS total_cash_out " +
+            "FROM m_cashier_sessions cs " +
+            "LEFT JOIN m_cashier_transactions ct ON ct.cashier_session_id = cs.id " +
+            "LEFT JOIN m_loan_transaction     lt ON lt.cashier_session_id = cs.id " +
+            "WHERE cs.id = ?";
 
-        final String cashOutSql = "select coalesce(sum(ct.txn_amount), 0) from m_cashier_transactions ct "
-                + "where ct.cashier_id = ? and ct.txn_date >= ? and ct.txn_type in (2, 201, 202)";
+        return jdbcTemplate.queryForObject(summarySql, (rs, rowNum) -> {
+            final BigDecimal openingAllocation = rs.getBigDecimal("opening_allocation");
+            final BigDecimal totalSettled      = rs.getBigDecimal("total_settled");
+            final BigDecimal totalCashIn       = rs.getBigDecimal("total_cash_in");
+            final BigDecimal totalCashOut      = rs.getBigDecimal("total_cash_out");
 
-        final LocalDate sessionDate = session.getSessionDate();
-        final BigDecimal openingAllocation = session.getOpeningAllocation() != null ? session.getOpeningAllocation() : BigDecimal.ZERO;
+            final BigDecimal expectedCash = openingAllocation.add(totalCashIn).subtract(totalCashOut);
+            final BigDecimal variance     = totalSettled.subtract(expectedCash);
 
-        final BigDecimal totalCashIn = jdbcTemplate.queryForObject(cashInSql, BigDecimal.class, session.getCashierId(), sessionDate);
-        final BigDecimal totalCashOut = jdbcTemplate.queryForObject(cashOutSql, BigDecimal.class, session.getCashierId(), sessionDate);
-
-        final BigDecimal safeTotalCashIn = totalCashIn != null ? totalCashIn : BigDecimal.ZERO;
-        final BigDecimal safeTotalCashOut = totalCashOut != null ? totalCashOut : BigDecimal.ZERO;
-
-        final BigDecimal expectedCash = openingAllocation.add(safeTotalCashIn).subtract(safeTotalCashOut);
-        final BigDecimal settledAmount = session.getTotalSettled() != null ? session.getTotalSettled() : BigDecimal.ZERO;
-        final BigDecimal variance = settledAmount.subtract(expectedCash);
-
-        return new CashierSessionSummaryData(session, openingAllocation, safeTotalCashIn, safeTotalCashOut, expectedCash, settledAmount,
-                variance);
+            return new CashierSessionSummaryData(session, openingAllocation, totalCashIn, totalCashOut, expectedCash,
+                    totalSettled, variance);
+        }, sessionId);
     }
 
     @Override
